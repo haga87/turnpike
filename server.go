@@ -34,13 +34,14 @@ type Server struct {
 	// Client ID -> prefix mapping
 	prefixes map[string]prefixMap
 	// Proc URI -> handler
-	rpcHandlers map[string]RPCHandler
-	subHandlers map[string]SubHandler
-	pubHandlers map[string]PubHandler
+	rpcHandlers   map[string]RPCHandler
+	subHandlers   map[string]SubHandler
+	pubHandlers   map[string]PubHandler
 	// Topic URI -> subscribed clients
 	subscriptions       map[string]listenerMap
 	subLock             *sync.Mutex
-	sessionOpenCallback func(string)
+	sessionOpenCallback   func(string)
+    sessionClosedCallback func(string)
 	websocket.Server
 }
 
@@ -106,6 +107,10 @@ func NewServer(isDebug bool) *Server {
 // The callback function must accept a string argument that is the session ID.
 func (t *Server) SetSessionOpenCallback(f func(string)) {
 	t.sessionOpenCallback = f
+}
+
+func (t *Server) SetSessionClosedCallback(f func(string)){
+    t.sessionClosedCallback = f
 }
 
 // RegisterRPC adds a handler for the RPC named uri.
@@ -325,6 +330,10 @@ func (t *Server) HandleWebsocket(conn *websocket.Conn) {
 		}
 	}
 
+    if t.sessionClosedCallback != nil {
+		t.sessionClosedCallback(id)
+	}
+    
 	delete(t.clients, id)
 	close(c)
 }
