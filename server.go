@@ -79,7 +79,7 @@ type Server struct {
 	subLock             *sync.Mutex
 	sessionOpenCallback   func(string)
     sessionClosedCallback func(string)
-	SocketServer
+	websocket.Server
 }
 
 // Using a handle func pattern so we can adapt the calls and do things like retry
@@ -135,7 +135,7 @@ func NewServer(isDebug bool) *Server {
 	}
 
 	// Create the handler with no origin verification
-	s.Server = SocketServer{
+	s.Server = websocket.Server{
 		Handler:   s.HandleWebsocket,
 	}
 
