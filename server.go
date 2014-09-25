@@ -5,7 +5,7 @@
 package turnpike
 
 import (
-	"github.com/gorilla/websocket"
+	"code.google.com/p/go.net/websocket"
 	"encoding/json"
 	"fmt"
 	"github.com/nu7hatch/gouuid"
