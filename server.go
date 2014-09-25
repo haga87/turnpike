@@ -27,6 +27,43 @@ const (
 	clientMaxFailures = 3
 )
 
+// Server represents a server of a WebSocket.
+type SocketServer struct {
+        // Config is a WebSocket configuration for new WebSocket connection.
+        Config
+
+        // Handshake is an optional function in WebSocket handshake.
+        // For example, you can check, or don't check Origin header.
+        // Another example, you can select config.Protocol.
+        Handshake func(*Config, *http.Request) error
+
+        // Handler handles a WebSocket connection.
+        Handler
+}
+
+// ServeHTTP implements the http.Handler interface for a WebSocket
+func (s SocketServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+        s.serveWebSocket(w, req)
+}
+
+func (s SocketServer) serveWebSocket(w http.ResponseWriter, req *http.Request) {
+        rwc, buf, err := w.(http.Hijacker).Hijack()
+        if err != nil {
+                panic("Hijack failed: " + err.Error())
+                return
+        }
+        // The server should abort the WebSocket connection if it finds
+        // the client did not send a handshake that matches with protocol
+        // specification.
+        defer rwc.Close()
+        conn, err := websocket.newServerConn(rwc, buf, req, &s.Config, s.Handshake)  
+
+        if conn == nil {
+                panic("unexpected nil conn")
+        }
+        s.Handler(conn)
+}
+
 // Server represents a WAMP server that handles RPC and pub/sub.
 type Server struct {
 	// Client ID -> send channel
@@ -42,7 +79,7 @@ type Server struct {
 	subLock             *sync.Mutex
 	sessionOpenCallback   func(string)
     sessionClosedCallback func(string)
-	websocket.Server
+	SocketServer
 }
 
 // Using a handle func pattern so we can adapt the calls and do things like retry
@@ -98,7 +135,7 @@ func NewServer(isDebug bool) *Server {
 	}
 
 	// Create the handler with no origin verification
-	s.Server = websocket.Server{
+	s.Server = SocketServer{
 		Handler:   s.HandleWebsocket,
 	}
 
