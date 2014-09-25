@@ -99,7 +99,6 @@ func NewServer(isDebug bool) *Server {
 
 	// Create the handler with no origin verification
 	s.Server = websocket.Server{
-		Handshake: checkWAMPHandshake,
 		Handler:   s.HandleWebsocket,
 	}
 
