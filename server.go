@@ -30,15 +30,15 @@ const (
 // Server represents a server of a WebSocket.
 type SocketServer struct {
         // Config is a WebSocket configuration for new WebSocket connection.
-        Config
+        *websocket.Config
 
         // Handshake is an optional function in WebSocket handshake.
         // For example, you can check, or don't check Origin header.
         // Another example, you can select config.Protocol.
-        Handshake func(*Config, *http.Request) error
+        Handshake func(*websocket.Config, *http.Request) error
 
         // Handler handles a WebSocket connection.
-        Handler
+        *websocket.Handler
 }
 
 // ServeHTTP implements the http.Handler interface for a WebSocket
@@ -56,7 +56,7 @@ func (s SocketServer) serveWebSocket(w http.ResponseWriter, req *http.Request) {
         // the client did not send a handshake that matches with protocol
         // specification.
         defer rwc.Close()
-        conn, err := websocket.newServerConn(rwc, buf, req, &s.Config, s.Handshake)  
+        conn, err := *websocket.newServerConn(rwc, buf, req, &s.Config, s.Handshake)  
 
         if conn == nil {
                 panic("unexpected nil conn")
