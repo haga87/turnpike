@@ -5,7 +5,7 @@
 package turnpike
 
 import (
-	"code.google.com/p/go.net/websocket"
+	"github.com/gorilla/websocket"
 	"encoding/json"
 	"fmt"
 	"github.com/nu7hatch/gouuid"
@@ -96,9 +96,13 @@ func NewServer(isDebug bool) *Server {
 		subscriptions: make(map[string]listenerMap),
 		subLock:       new(sync.Mutex),
 	}
+
+	// Create the handler with no origin verification
+	handler := websocket.Server {Handler: s.HandleWebsocket}
+
 	s.Server = websocket.Server{
 		Handshake: checkWAMPHandshake,
-		Handler:   websocket.Handler(s.HandleWebsocket),
+		Handler: handler,
 	}
 	return s
 }
