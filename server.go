@@ -30,11 +30,11 @@ const (
 
 
 func newServerConn(rwc io.ReadWriteCloser, buf *bufio.ReadWriter, req *http.Request, config *websocket.Config, handshake func(*websocket.Config, *http.Request) error) (conn *websocket.Conn, err error) {
-        var hs serverHandshaker = &hybiServerHandshaker{Config: config}
+        var hs websocket.serverHandshaker = &websocket.hybiServerHandshaker{Config: config}
         code, err := hs.ReadHandshake(buf.Reader, req)
-        if err == ErrBadWebSocketVersion {
+        if err == websocket.ErrBadWebSocketVersion {
                 fmt.Fprintf(buf, "HTTP/1.1 %03d %s\r\n", code, http.StatusText(code))
-                fmt.Fprintf(buf, "Sec-WebSocket-Version: %s\r\n", SupportedProtocolVersion)
+                fmt.Fprintf(buf, "Sec-WebSocket-Version: %s\r\n", websocket.SupportedProtocolVersion)
                 buf.WriteString("\r\n")
                 buf.WriteString(err.Error())
                 buf.Flush()
