@@ -5,8 +5,7 @@
 package turnpike
 
 import (
-	"bufio"
-	"code.google.com/p/go.net/websocket"
+	"github.com/fernandez14/go.net/websocket"
 	"encoding/json"
 	"fmt"
 	"github.com/nu7hatch/gouuid"
@@ -27,84 +26,6 @@ const (
 	clientConnTimeout = 6
 	clientMaxFailures = 3
 )
-
-
-func newServerConn(rwc io.ReadWriteCloser, buf *bufio.ReadWriter, req *http.Request, config *websocket.Config, handshake func(*websocket.Config, *http.Request) error) (conn *websocket.Conn, err error) {
-        var hs *websocket.serverHandshaker = &websocket.hybiServerHandshaker{Config: config}
-        code, err := hs.ReadHandshake(buf.Reader, req)
-        if err == websocket.ErrBadWebSocketVersion {
-                fmt.Fprintf(buf, "HTTP/1.1 %03d %s\r\n", code, http.StatusText(code))
-                fmt.Fprintf(buf, "Sec-WebSocket-Version: %s\r\n", websocket.SupportedProtocolVersion)
-                buf.WriteString("\r\n")
-                buf.WriteString(err.Error())
-                buf.Flush()
-                return
-        }
-        if err != nil {
-                fmt.Fprintf(buf, "HTTP/1.1 %03d %s\r\n", code, http.StatusText(code))
-                buf.WriteString("\r\n")
-                buf.WriteString(err.Error())
-                buf.Flush()
-                return
-        }
-        if handshake != nil {
-                err = handshake(config, req)
-                if err != nil {
-                        code = http.StatusForbidden
-                        fmt.Fprintf(buf, "HTTP/1.1 %03d %s\r\n", code, http.StatusText(code))
-                        buf.WriteString("\r\n")
-                        buf.Flush()
-                        return
-                }
-        }
-        err = hs.AcceptHandshake(buf.Writer)
-        if err != nil {
-                code = http.StatusBadRequest
-                fmt.Fprintf(buf, "HTTP/1.1 %03d %s\r\n", code, http.StatusText(code))
-                buf.WriteString("\r\n")
-                buf.Flush()
-                return
-        }
-        conn = hs.NewServerConn(buf, rwc, req)
-        return
-}
-
-// Server represents a server of a WebSocket.
-type SocketServer struct {
-        // Config is a WebSocket configuration for new WebSocket connection.
-        *websocket.Config
-
-        // Handshake is an optional function in WebSocket handshake.
-        // For example, you can check, or don't check Origin header.
-        // Another example, you can select config.Protocol.
-        Handshake func(*websocket.Config, *http.Request) error
-
-        // Handler handles a WebSocket connection.
-        *websocket.Handler
-}
-
-// ServeHTTP implements the http.Handler interface for a WebSocket
-func (s SocketServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-        s.serveWebSocket(w, req)
-}
-
-func (s SocketServer) serveWebSocket(w http.ResponseWriter, req *http.Request) {
-        rwc, buf, err := w.(http.Hijacker).Hijack()
-        if err != nil {
-                panic("Hijack failed: " + err.Error())
-                return
-        }
-        // The server should abort the WebSocket connection if it finds
-        // the client did not send a handshake that matches with protocol
-        // specification.
-        defer rwc.Close()
-        conn, err := newServerConn(rwc, buf, req, &s.Config, s.Handshake)  
-
-        if conn == nil {
-                panic("unexpected nil conn")
-        }
-        s.Handler(conn)
-}
 
 // Server represents a WAMP server that handles RPC and pub/sub.
 type Server struct {
