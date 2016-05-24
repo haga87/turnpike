@@ -5,9 +5,9 @@
 package turnpike
 
 import (
-	"code.google.com/p/go.net/websocket"
 	"encoding/json"
 	"fmt"
+	"github.com/fernandez14/go.net/websocket"
 	"io"
 	"log"
 	"math/rand"
