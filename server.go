@@ -5,9 +5,9 @@
 package turnpike
 
 import (
-	"github.com/fernandez14/go.net/websocket"
 	"encoding/json"
 	"fmt"
+	"github.com/fernandez14/go.net/websocket"
 	"github.com/nu7hatch/gouuid"
 	"io"
 	"log"
@@ -34,14 +34,14 @@ type Server struct {
 	// Client ID -> prefix mapping
 	prefixes map[string]prefixMap
 	// Proc URI -> handler
-	rpcHandlers   map[string]RPCHandler
-	subHandlers   map[string]SubHandler
-	pubHandlers   map[string]PubHandler
+	rpcHandlers map[string]RPCHandler
+	subHandlers map[string]SubHandler
+	pubHandlers map[string]PubHandler
 	// Topic URI -> subscribed clients
-	subscriptions       map[string]listenerMap
-	subLock             *sync.Mutex
+	subscriptions         map[string]listenerMap
+	subLock               *sync.Mutex
 	sessionOpenCallback   func(string)
-    sessionClosedCallback func(string)
+	sessionClosedCallback func(string)
 	websocket.Server
 }
 
@@ -99,7 +99,7 @@ func NewServer(isDebug bool) *Server {
 
 	// Create the handler with no origin verification
 	s.Server = websocket.Server{
-		Handler:   s.HandleWebsocket,
+		Handler: s.HandleWebsocket,
 	}
 
 	return s
@@ -111,8 +111,8 @@ func (t *Server) SetSessionOpenCallback(f func(string)) {
 	t.sessionOpenCallback = f
 }
 
-func (t *Server) SetSessionClosedCallback(f func(string)){
-    t.sessionClosedCallback = f
+func (t *Server) SetSessionClosedCallback(f func(string)) {
+	t.sessionClosedCallback = f
 }
 
 // RegisterRPC adds a handler for the RPC named uri.
@@ -332,10 +332,10 @@ func (t *Server) HandleWebsocket(conn *websocket.Conn) {
 		}
 	}
 
-    if t.sessionClosedCallback != nil {
+	if t.sessionClosedCallback != nil {
 		t.sessionClosedCallback(id)
 	}
-    
+
 	delete(t.clients, id)
 	close(c)
 }
@@ -461,6 +461,7 @@ func (t *Server) handlePublish(id string, msg publishMsg) {
 
 	lm, ok := t.subscriptions[uri]
 	if !ok {
+		log.Printf("==SDMXSOCKET: Could not deliver message %s to box", msg)
 		return
 	}
 
@@ -469,6 +470,7 @@ func (t *Server) handlePublish(id string, msg publishMsg) {
 		if debug {
 			log.Printf("turnpike: error creating event message: %s", err)
 		}
+		log.Printf("==SDMXSOCKET: Could not deliver message %s to box", msg)
 		return
 	}
 
@@ -517,6 +519,7 @@ func (t *Server) handlePublish(id string, msg publishMsg) {
 			if len(client) == cap(client) {
 				<-client
 			}
+
 			client <- string(out)
 		}
 	}
